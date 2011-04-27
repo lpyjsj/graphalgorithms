@@ -11,21 +11,22 @@ package Graphs;
 public class Edge {
 
     private float Weight;
-    private Vertex Source, Target;
-    private String label;
+    private Node Source, Target;
+    private int label;
+    private boolean visited = false;
 
-    public Edge(Vertex from, Vertex to, float weight, String label) throws NoSuchFieldException {
+    public Edge(Node from, Node to, float weight, int label) {
         this.Source = from;
         this.Target = to;
         this.Weight = weight;
         this.label = label;
     }
 
-    public Vertex getSourceVertex() {
+    public Node getSourceNode() {
         return this.Source;
     }
 
-    public Vertex getTargetVertex() {
+    public Node getTargetNode() {
         return this.Target;
     }
 
@@ -33,11 +34,11 @@ public class Edge {
         return this.Weight;
     }
 
-    public void setSourceVertex(Vertex s) {
+    public void setSourceNode(Node s) {
         this.Source = s;
     }
 
-    public void setTargetVertex(Vertex t) {
+    public void setTargetNode(Node t) {
         this.Target = t;
     }
 
@@ -45,11 +46,19 @@ public class Edge {
         this.Weight = w;
     }
 
-    public String getLabel() {
+    public int getLabel() {
         return this.label;
     }
 
-    public void setLabel(String l) {
+    public void setLabel(int l) {
         this.label = l;
+    }
+
+    public boolean isVisited() {
+        return this.visited;
+    }
+
+    public void setVisited(boolean b) {
+        this.visited = b;
     }
 }

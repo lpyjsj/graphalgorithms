@@ -11,37 +11,33 @@ package Graphs;
  */
 public class DirectedGraph extends Graph {
 
-    public DirectedGraph(int n, int m) {
-        super(n, m);
+    public DirectedGraph() {
+        super();
     }
 
     @Override
-    void addVertex(Vertex v) {
-        this.Vertices.add(v);
+    void addVertex(Node v) {
+        this.Nodes.add(v);
     }
 
     @Override
     void addEdge(Edge e) {
         this.Edges.add(e);
-        this.Vertices.get(this.Vertices.indexOf(e.getSourceVertex())).addAdjecentVertex(e.getTargetVertex());
+        this.Nodes.get(this.Nodes.indexOf(e.getSourceNode())).addAdjecentNodeIn(e.getTargetNode());
     }
 
     @Override
-    void removeVertex(Vertex v) {
-        this.Vertices.remove(v);
-        for(Vertex vertex : this.Vertices){
-            vertex.removeAdjecentVertex(v);
+    void removeVertex(Node v) {
+        this.Nodes.remove(v);
+        for(Node vertex : this.Nodes){
+            vertex.removeAdjecentNodeIn(v);
         }
     }
 
     @Override
     void removeEdge(Edge e) {
-        this.Vertices.get(this.Vertices.indexOf(e.getSourceVertex())).removeAdjecentVertex(e.getTargetVertex());
+        this.Nodes.get(this.Nodes.indexOf(e.getSourceNode())).removeAdjecentNodeIn(e.getTargetNode());
     }
 
-    @Override
-    void generateAdjacencyListFromEdges() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 
 }
