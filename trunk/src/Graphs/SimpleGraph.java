@@ -15,7 +15,7 @@ public class SimpleGraph extends Graph {
     }
 
     @Override
-    void addVertex(Node v) {
+    void addNode(Node v) {
         this.Nodes.add(v);
     }
 
@@ -27,7 +27,7 @@ public class SimpleGraph extends Graph {
     }
 
     @Override
-    void removeVertex(Node v) {
+    void removeNode(Node v) {
         this.Nodes.remove(v);
         //Remove this Node too in all adjacentlists
         for (Node vertex : this.Nodes) {

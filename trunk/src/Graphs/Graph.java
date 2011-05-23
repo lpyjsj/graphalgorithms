@@ -20,7 +20,6 @@ public abstract class Graph {
 
     protected Vector<Node> Nodes;
     protected Vector<Edge> Edges;
-    private int nodeAmount, edgeAmount;
 
     public Graph() {
         this.Nodes = new Vector<Node>();
@@ -28,11 +27,11 @@ public abstract class Graph {
     }
 
     //abstrakte Methoden werden für unterschiedliche Graphen unterschiedlich impementiert!!!
-    abstract void addVertex(Node v);
+    abstract void addNode(Node v);
 
     abstract void addEdge(Edge e);
 
-    abstract void removeVertex(Node v);
+    abstract void removeNode(Node v);
 
     abstract void removeEdge(Edge e);
 
@@ -95,13 +94,13 @@ public abstract class Graph {
             st.nextToken();
 
             //getting amount of vertices
-            this.nodeAmount = Integer.parseInt(st.nextToken());
+            Nodes.ensureCapacity(Integer.parseInt(st.nextToken()));
 
             //throwing away char m
             st.nextToken();
 
             //getting amount of edges
-            this.edgeAmount = Integer.parseInt(st.nextToken());
+            Edges.ensureCapacity(Integer.parseInt(st.nextToken()));
 
             int edgecounter = 0;
             //reading rest (assuming nodes are seperated by space delimter)
