@@ -14,9 +14,9 @@ public class DirectedGraph extends Graph {
     public DirectedGraph() {
         super();
     }
-
+    
     @Override
-    void addVertex(Node v) {
+    void addNode(Node v) {
         this.Nodes.add(v);
     }
 
@@ -27,7 +27,7 @@ public class DirectedGraph extends Graph {
     }
 
     @Override
-    void removeVertex(Node v) {
+    void removeNode(Node v) {
         this.Nodes.remove(v);
         for(Node vertex : this.Nodes){
             vertex.removeAdjecentNodeIn(v);
@@ -38,6 +38,4 @@ public class DirectedGraph extends Graph {
     void removeEdge(Edge e) {
         this.Nodes.get(this.Nodes.indexOf(e.getSourceNode())).removeAdjecentNodeIn(e.getTargetNode());
     }
-
-
 }
