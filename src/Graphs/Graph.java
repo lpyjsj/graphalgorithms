@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -14,7 +15,7 @@ import java.util.Vector;
  */
 /**
  *
- * @author Christian Hildebrandt
+ * @author Christian Hildebrandt (210238835), Matthias Bady (210235131)
  */
 public abstract class Graph {
 
@@ -53,8 +54,9 @@ public abstract class Graph {
                 bw.newLine();
             }
             bw.close();
-        } catch (Exception e) {
-            System.err.println("Could not write ro File: " + f.getName() + " : " + e.getLocalizedMessage());
+        } catch (IOException ioe) {
+            System.err.println("Could not write ro File: " + f.getName());
+            System.out.println(ioe.getLocalizedMessage());
         }
 
     }
@@ -111,11 +113,38 @@ public abstract class Graph {
 
                 //getting node A
                 Node A = new Node(Integer.parseInt(st.nextToken()));
-                this.Nodes.add(A);
+                // prevent inserting different node objects with same label
+                if (!this.Nodes.isEmpty()) {
+                    for (Node n : this.Nodes) {
+                        if (n.equals(A)) {
+                            A = n;
+                            break;
+                        } else if (n.equals(this.Nodes.lastElement())) {
+                            this.Nodes.add(A);
+                            break;
+                        }
+                    }
+                } else {
+                    this.Nodes.add(A);
+                }
 
                 //getting node B
-                Node B = new Node(Integer.parseInt(st.nextToken()));;
-                this.Nodes.add(B);
+                Node B = new Node(Integer.parseInt(st.nextToken()));
+                // prevent inserting different node objects with same label
+                if (!this.Nodes.isEmpty()) {
+                    for (Node n : this.Nodes) {
+                        if (n.equals(B)) {
+                            B = n;
+                            break;
+                        } else if (n.equals(this.Nodes.lastElement())) {
+                            this.Nodes.add(B);
+                            break;
+                        }
+                    }
+                } else {
+                    this.Nodes.add(B);
+                }
+
 
                 //generating edges
                 Edge E;
@@ -123,8 +152,8 @@ public abstract class Graph {
                 edgecounter += 1;
             }
             br.close();
-        } catch (Exception e) {
-            System.err.println("ERROR: Cannot read File (" + e.getLocalizedMessage() + ")");
+        } catch (IOException ioe) {
+            System.err.println("ERROR: Cannot read File (" + ioe.getLocalizedMessage() + ")");
             System.exit(1);
         }
         //now generate adj.-lists for each node from readed edges
