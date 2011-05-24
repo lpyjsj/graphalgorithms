@@ -1,0 +1,21 @@
+\documentclass{scrartcl}
+
+\usepackage{eurosym}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage{verbatim}
+
+\title{Effiziente Graphenalgorithmen - 4. Übung}
+\author{Matthias Bady (210235131)\\ Christian Hildebrandt (210238835)}
+
+\begin{document}
+
+\maketitle
+
+\section{Aufgabe 4.1}
+Ja, bidirektionale und zielgerichtete Suche lassen sich sinnvoll kombinieren. Der Algorithmus erfolgt analog dem bidirektionalen Dijkstra.
+
+\section{Aufgabe 4.2}
+Da das asymptotische Verhalten untersucht werden soll, wird angenommen, jeder Knoten in D verfügt über jeweils K Nachfolger. Da es sich bei D um einen bipartiten Graph handelt, befinden sich diese K Nachfolger jeweils in der konträren Menge. Weiterhin soll angenommen werden, das jeder Pfad in D aus T Kanten besteht. Ausgehend vom Startknoten s enthält eine Menge damit $\sum_{i=1}^{T}{K^i}$ Knoten und die andere Menge $\sum_{i=1}^{T-1}{K^i}$ Knoten. Der Startknoten wird wegen der asymptotischen Betrachtung vernachlässigt. Damit ist die Gesamtzahl der Knoten in D und die Zahl der äußeren Iterationen $\sum_{i=1}^{T}{K^i}$. Allerdings ist die Kantenliste im letzten Durchlauf leer, so daß die Komplexität hier bei $O(K^T*0)$ liegt. Insgesamt liegt diese also bei $O((1+\sum_{i=1}^{T}{K^i} - K^T)*m) = O((\sum_{i=1}^{T-1}{K^i})*m)$. Da $\sum_{i=1}^{T-1}{K^i} \leq \sum_{i=1}^{T}{K^i}$ gilt $O(n_1*m)$
+
+\end{document}
