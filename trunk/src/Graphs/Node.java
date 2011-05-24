@@ -8,7 +8,7 @@ import java.util.Vector;
  */
 /**
  *
- * @author siggiaze
+ * @author Christian Hildebrandt (210238835), Matthias Bady (210235131)
  */
 public class Node {
 

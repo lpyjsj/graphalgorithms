@@ -7,7 +7,7 @@ package Graphs;
 
 /**
  *
- * @author siggiaze
+ * @author Christian Hildebrandt (210238835), Matthias Bady (210235131)
  */
 public class DirectedGraph extends Graph {
 
