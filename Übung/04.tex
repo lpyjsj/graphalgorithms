@@ -15,7 +15,7 @@
 %{{{
 \section{Aufgabe 4.1}
 %}}}
-Ja, bidirektionale und zielgerichtete Suche lassen sich sinnvoll kombinieren. Der Algorithmus erfolgt analog dem bidirektionalen Dijkstra, der ebenfalls zielgerichtet, bidirektional arbeitet. Einzige Bedingung, die an den Algorithmus zu stellen ist, ist dass er den gleichen Weg vom Start zum Zielknoten und vice versa findet.
+Ja, bidirektionale und zielgerichtete Suche lassen sich sinnvoll kombinieren. Der Algorithmus erfolgt analog dem bidirektionalen Dijkstra, der ebenfalls zielgerichtet, bidirektional arbeitet. Einzige Bedingung, die an den Algorithmus zu stellen ist, ist dass er den gleichen Weg vom Start zum Zielknoten und vice versa findet - also korrekt arbeitet.
 %{{{
 \section{Aufgabe 4.2}
 %}}}
@@ -47,7 +47,7 @@ Sei $c_{ij}^{k}$ die Länge der Kante $(i,j)$ im $k$-ten Durchlauf und sei $T_{k
 \item[b)]
 \end{description}
 Die reduzierten Kantenlängen hinsichtlich der Distanzen $d_{k-1}^{*}$ sind alle nichtnegativ. Damit kann Dijkstra  zur Lösung des Kürzeste-Wege-Problems in $P_{k}$ verwendet werden. Jeder kürzeste Weg hat eine Länge von höchstens $n$ und unter Benutzung der Dial's-Variante des Dijkstra, folgt eine Laufzeit von $O(m)$. Die Operationen \verb+decreaseKey+ und \verb+findMin+ laufen in $O(1)$ und im $k$-ten Schritt kann ein kürzester Pfad von $u$ nach $v$ in $O(m)$ gefunden werden. Demnach gilt für den Bitscaling-Algorithmus eine Gesamtlaufzeit von $O(km) = O(m \log C)$, mit $C = \max_{(u,v) \in A} \lbrace c(u,v) \rbrace$.
-
+\newpage
 %{{{
 \section{Aufgabe 4.4}
 %}}}
@@ -57,3 +57,4 @@ Die reduzierten Kantenlängen hinsichtlich der Distanzen $d_{k-1}^{*}$ sind alle
 \end{figure}
 \end{center}
 \end{document}
+
