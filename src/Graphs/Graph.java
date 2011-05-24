@@ -109,7 +109,9 @@ public abstract class Graph {
             while ((line = br.readLine()) != null) {
                 st = new StringTokenizer(line);
                 //throwing away char e
-                st.nextToken();
+                    st.nextToken();
+
+                
 
                 //getting node A
                 Node A = new Node(Integer.parseInt(st.nextToken()));

@@ -35,8 +35,12 @@ public class Euler {
         //Graph G = GG.generateNewEulerGraph(200, 800);
         Graph G = new DirectedGraph();
         G.readFromFile(infile);
-        System.out.println("Euler-Kreis in Graph enthalten: " + isEulerCircle(G));
-        System.out.println("Weg in Datei " + outfile.getName() + " enthalten.");
+        if (isEulerCircle(G)) {
+            System.out.println("Euler-Kreis in Graph enthalten.");
+            System.out.println("Weg in Datei " + outfile.getName() + " geschrieben.");
+        } else {
+            System.out.println("Kein Euler-Kreis in Graph enthalten.");
+        }
     }
 
     private static boolean isEulerCircle(Graph G) {
@@ -48,17 +52,18 @@ public class Euler {
         toVisit.add(G.getNodes().firstElement());
         int nodeIndex = 0;
         // initial start node
-        Node start = toVisit.firstElement(), current = null;
-        while (!toVisit.isEmpty()) {
+        Node start = null, current = null;
+        boolean run = true;
+        while (run) {
 
             // If the start node has no in edges there is no way
             // to come back to this node so choose another node of G
-            if (start.getAdjacencyListIn().isEmpty()) {
+            if (start == null || start.getAdjacencyListIn().isEmpty()) {
                 // replace old start with new start node & clear to visit & visited list
                 start = G.getNodes().get(nodeIndex);
                 toVisit.clear();
+                toVisit.add(start);
                 Visited.clear();
-                Visited.add(start);
                 firstStartRun = true;
                 // check whether all nodes hav been visited
                 if (nodeIndex < G.getNodes().size()) {
@@ -69,29 +74,49 @@ public class Euler {
                 }
             }
 
-            if (firstStartRun) {
-                // add all out adjecent nodes of start to visit list
-                for (Node n : start.getAdjacencyListOut()) {
-                    toVisit.add(n);
-                }
-                toVisit.remove(start);
-                Visited.add(start);
-                firstStartRun = false;
-                // else add out nodes of current node to visit list
+            current = toVisit.firstElement();
+
+            // add all out adjecent nodes of start to visit list
+            for (Node n : current.getAdjacencyListOut()) {
+                toVisit.add(n);
+            }
+            // write lists
+            toVisit.remove(current);
+            Visited.add(current);
+
+
+
+            // check whether we run around up to start node
+            if (!firstStartRun & current.equals(start)) {
+                thereIsAEulerCircle = true;
+                break;
             } else {
-                current = toVisit.firstElement();
-                toVisit.remove(current);
-                Visited.add(current);
-                for (Node n : current.getAdjacencyListOut()) {
-                    toVisit.add(n);
+                firstStartRun = false;
+            }
+
+            // check whether we visited one node twice -
+            // so we have entered an euler circle with another node than start
+            int twice = 0;
+            for (Node n : Visited) {
+                if (current.equals(n)) {
+                    twice += 1;
                 }
-                // check whether we run around up to start node
-                if (current.equals(start)) {
-                    thereIsAEulerCircle = true;
-                    break;
+                if (twice > 1) {
+                    start = null;
+                }
+            }
+
+            // check whether we have still unvisited nodes in G
+            // but no more nodes in to visit list
+            if (toVisit.isEmpty()) {
+                if (nodeIndex < (G.getNodes().size() - 1)) {
+                    start = null;
+                } else {
+                    run = false;
                 }
             }
         }
+
         WritePathToFile(outfile, Visited);
         return thereIsAEulerCircle;
     }
@@ -100,8 +125,7 @@ public class Euler {
         // delete old paths
         if (f.exists()) {
             f.delete();
-        }
-        // write the found path to specified file
+        } // write the found path to specified file
         try {
             BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
             for (Node n : path) {
@@ -110,8 +134,6 @@ public class Euler {
             bw.close();
         } catch (IOException ioe) {
             System.err.println("Cannot write to file: " + f.getName());
-
         }
-
     }
 }
