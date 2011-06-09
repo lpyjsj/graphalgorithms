@@ -20,7 +20,7 @@ public class GraphGenerator {
     public static Graph generateNewRandomGraph(int numNodes, int numEdges, int mode) {
         Graph graph = new Graph(numNodes);
         for (int i = 0; i < numNodes; i++) {
-            graph.nodes.add(new Node(i));
+            graph.nodes.put(i, new Node(i));
         }
         //generating random edges
         Random generator = new Random();
@@ -55,7 +55,7 @@ public class GraphGenerator {
                 //generating first node
                 current = i;
             }
-            graph.nodes.add(new Node(current));
+            graph.nodes.put(i, new Node(current));
         }
         
         graph.setEdges(edges, mode);
