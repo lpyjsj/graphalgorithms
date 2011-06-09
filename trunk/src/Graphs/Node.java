@@ -7,6 +7,17 @@ package Graphs;
 public class Node {
 
     private int label, x, y;
+    protected float cost = 0.f;
+
+    public float getCost()
+    {
+        return cost;
+    }
+
+    public void setCost(float cost)
+    {
+        this.cost = cost;
+    }
 
     public Node(int label)
     {
@@ -59,20 +70,8 @@ public class Node {
     @Override
     public boolean equals(Object obj)
     {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
         final Node other = (Node) obj;
         if (this.label != other.label) {
-            return false;
-        }
-        if (this.x != other.x) {
-            return false;
-        }
-        if (this.y != other.y) {
             return false;
         }
         return true;

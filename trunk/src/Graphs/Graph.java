@@ -27,11 +27,11 @@ public class Graph {
     public int[] adjArray;
     public int[] adjIndices;
     public Edge[] edgeList;
-    public HashSet<Node> nodes;
+    public HashMap<Integer, Node> nodes;
 
     public Graph(int numNodes)
     {
-        nodes = new HashSet<Node>(numNodes);
+        nodes = new HashMap<Integer, Node>(numNodes);
     }
 
     public void setEdges(Collection<Edge> edges, int _mode)
@@ -83,7 +83,7 @@ public class Graph {
                 bw.append(new Integer(adjArray.length).toString());
             }
             bw.newLine();
-            for (Node n : nodes) {
+            for (Node n : nodes.values()) {
                 bw.write(n.toString());
                 bw.newLine();
             }
@@ -120,12 +120,11 @@ public class Graph {
 
     public static Graph readFromFile(File graphFile, int mode)
     {
+        int lineCount = 1;
         Graph graph = null;
         
         Pattern flPattern = Pattern.compile("n ([0-9]+) m ([0-9]+)", Pattern.CASE_INSENSITIVE);
-        Pattern pattern = Pattern.compile("([ve]) ([0-9]+) ([0-9]+) ??([0-9]+)?", Pattern.CASE_INSENSITIVE);
-
-        int lineCount = 1;
+        Pattern pattern = Pattern.compile("([ve]) ([0-9]+) (-??[0-9]+) ?(-??[0-9]+)?", Pattern.CASE_INSENSITIVE);
         
         try {
 
@@ -137,6 +136,7 @@ public class Graph {
             //read first line
             line = br.readLine();
             m = flPattern.matcher(line);
+            m.find();
             numNodes = Integer.parseInt(m.group(1));
             
             graph = new Graph(numNodes);
@@ -145,6 +145,7 @@ public class Graph {
             while ((line = br.readLine()) != null) {
                 lineCount++;
                 m = pattern.matcher(line);
+                m.find();
                 if (m.group(1).equalsIgnoreCase("v")) {
                     //Node
 
@@ -161,11 +162,11 @@ public class Graph {
                     } catch (Exception e) {
                         y = -1;
                     }
-                    graph.nodes.add(new Node(label, x, y));
+                    graph.nodes.put(new Integer(label), new Node(label, x, y));
                 } else {
                     //Edge
-                    Integer n1 = Integer.parseInt(m.group(3));
-                    Integer n2 = Integer.parseInt(m.group(4));
+                    Integer n1 = Integer.parseInt(m.group(2));
+                    Integer n2 = Integer.parseInt(m.group(3));
 
                     edges.add(new Edge(n1, n2));
                 }
@@ -178,6 +179,8 @@ public class Graph {
             System.exit(1);
         } catch (Exception e) {
             System.err.println("Fehler beim Laden der Datei: " + graphFile.getName() + " in Zeile: " + lineCount);
+            e.printStackTrace();
+            System.exit(1);
         }
         
         return graph;
