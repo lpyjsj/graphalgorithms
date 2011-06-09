@@ -6,8 +6,9 @@ package Graphs;
  */
 public class Node {
 
-    private int label, x, y;
+    private int label, x, y, bucketNumber = -1;
     protected float cost = 0.f;
+    private Node pred = null;
 
     public float getCost()
     {
@@ -17,6 +18,16 @@ public class Node {
     public void setCost(float cost)
     {
         this.cost = cost;
+    }
+
+    public int getBucketNumber()
+    {
+        return bucketNumber;
+    }
+
+    public void setBucketNumber(int bucketNumber)
+    {
+        this.bucketNumber = bucketNumber;
     }
 
     public Node(int label)
@@ -85,5 +96,15 @@ public class Node {
         hash = 41 * hash + this.x;
         hash = 41 * hash + this.y;
         return hash;
+    }
+
+    public Node getPred()
+    {
+        return pred;
+    }
+
+    public void setPred(Node pred)
+    {
+        this.pred = pred;
     }
 }
