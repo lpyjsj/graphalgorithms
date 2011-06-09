@@ -5,9 +5,11 @@ import Graphs.Node;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 public class Dijkstra {
 
@@ -62,14 +64,14 @@ public class Dijkstra {
 
         long t1 = System.currentTimeMillis();
         Graph graph = Graph.readFromFile(new File(filename), Graph.MODE_ADJ);
-        System.out.println("Graph loaded in: " +(System.currentTimeMillis()-t1)/1000.0+"s");
-        System.out.println(graph.nodes.size()+" nodes");
+        System.out.println("Graph loaded in: " + (System.currentTimeMillis() - t1) / 1000.0 + "s");
+        System.out.println(graph.nodes.size() + " nodes");
 
         t1 = System.currentTimeMillis();
-        List<Integer> path = compute(graph, s, t);
-        System.out.println("Path computed in: " +(System.currentTimeMillis()-t1)/1000.0+"s");
-        for(Integer i : path) {
-            System.out.print(i+" <- ");
+        List<Integer> path = dial(graph, s, t);
+        System.out.println("Path computed in: " + (System.currentTimeMillis() - t1) / 1000.0 + "s");
+        for (Integer i : path) {
+            System.out.print(i + " <- ");
         }
     }
 
@@ -83,8 +85,8 @@ public class Dijkstra {
         final int[] pre = new int[graph.nodes.size()];
         final boolean[] visited = new boolean[graph.nodes.size()];
         Arrays.fill(visited, false);
-        
-        for(Node n : graph.nodes.values()) {
+
+        for (Node n : graph.nodes.values()) {
             n.setCost(Float.POSITIVE_INFINITY);
         }
         graph.nodes.get(s).setCost(0.f);
@@ -102,11 +104,11 @@ public class Dijkstra {
         queue.add(graph.nodes.get(s));
 
         System.out.println("compute initialized");
-        
+
         while (!queue.isEmpty()) {
             Node n = queue.poll();
             visited[n.getLabel()] = true;
-            if(t.equals(n.getLabel())) {
+            if (t.equals(n.getLabel())) {
                 break;
             }
 
@@ -123,11 +125,12 @@ public class Dijkstra {
 
             for (int j = idx; j < next; j++) {
                 Node other = graph.nodes.get(graph.adjArray[j]);
+                //TODO visited setzen!!!
                 if (!visited[other.getLabel()]) {
                     float tmp = n.getCost() + manhattan(n, other);
-                    if(tmp < other.getCost()) {
+                    if (tmp < other.getCost()) {
                         other.setCost(tmp);
-                        if(Float.isInfinite(other.getCost())) {
+                        if (Float.isInfinite(other.getCost())) {
                             queue.add(other);
                         } else {
                             queue.remove(other);
@@ -138,15 +141,106 @@ public class Dijkstra {
                 }
             }
         }
-        
+
         List<Integer> path = new LinkedList<Integer>();
         path.add(t);
         int i = t;
-        while(i != s) {
+        while (i != s) {
             i = pre[i];
             path.add(i);
         }
-        
+
+        return path;
+    }
+
+    //a good description: http://publish.uwo.ca/~jmalczew/gida_1/Zhan/Zhan.htm#5.%20The%20Dijkstra%27s%20Algorithm%20Implemented%20With
+    //or this: http://books.google.de/books?id=DnP9vmaPwwEC&pg=PA120&lpg=PA120&dq=dial+algorithmus&source=bl&ots=e6wdHo-2b-&sig=31Mr5h-XGCpdDSh8YFgBILMLU30&hl=de&ei=tyLxTYWjH8Tu-gbA74iiAw&sa=X&oi=book_result&ct=result&resnum=6&ved=0CEEQ6AEwBQ#v=onepage&q=dial%20algorithmus&f=false
+    //TODO testing!!!
+    protected static List<Integer> dial(Graph graph, Integer s, Integer t)
+    {
+        final int[] pre = new int[graph.nodes.size()];
+
+        for (Node n : graph.nodes.values()) {
+            n.setCost(Float.POSITIVE_INFINITY);
+        }
+
+        HashMap<Integer, LinkedList<Node>> queue = new HashMap<Integer, LinkedList<Node>>();
+
+        //initial putting s into queue
+        Node start = graph.nodes.get(s);
+        start.setCost(0.f);
+
+        LinkedList<Node> first = new LinkedList<Node>();
+        first.add(start);
+
+        queue.put(0, first);
+
+        boolean run = true;
+
+        while (run) {
+            for (int i : queue.keySet()) {
+                while (!queue.get(i).isEmpty()) {
+                    Node n = queue.get(i).poll();
+
+                    if (t.equals(n.getLabel())) {
+                        run = false;
+                        break;
+                    }
+
+                    n.setCost(i);
+
+                    int idx = graph.adjIndices[n.getLabel()];
+                    if (idx == -1) {
+                        continue;
+                    }
+                    int next = -1;
+                    if (n.getLabel() < graph.adjIndices.length - 1) {
+                        next = graph.adjIndices[n.getLabel() + 1];
+                    } else {
+                        next = graph.adjArray.length;
+                    }
+
+                    //check neighbors of n
+                    for (int j = idx; j < next; j++) {
+                        Node other = graph.nodes.get(graph.adjArray[j]);
+                        other.setPred(n);
+
+                        //if cost is infinite this node was not yet visited
+                        if (Float.isInfinite(other.getCost())) {
+                            int newBucketNumber = (int) (n.getCost() + manhattan(n, other));
+
+                            LinkedList<Node> bucket;
+
+                            //check whether this newBucketNumber exists in queue
+                            if (queue.containsKey(newBucketNumber)) {
+                                bucket = queue.get(newBucketNumber);
+                            } else {
+                                bucket = new LinkedList<Node>();
+                            }
+
+                            //check whether node just had a bucket
+                            if (other.getBucketNumber() == -1) {
+
+                                bucket.add(other);
+                                queue.put(newBucketNumber, bucket);
+                            } //check whether old bucket = new bucket ( if old = new - nothing to do)
+                            else if (other.getBucketNumber() != newBucketNumber) {
+                                queue.get(other.getBucketNumber()).remove(other);
+                                bucket.add(other);
+                                queue.put(newBucketNumber, bucket);
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        List<Integer> path = new LinkedList<Integer>();
+        Node n = graph.nodes.get(t);
+        while(!n.getPred().equals(graph.nodes.get(s))){
+            path.add(n.getLabel());
+        }
+        path.add(s);
         return path;
     }
 }
