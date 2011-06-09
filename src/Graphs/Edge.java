@@ -10,55 +10,66 @@ package Graphs;
  */
 public class Edge {
 
-    private float Weight;
-    private Node Source, Target;
     private int label;
-    private boolean visited = false;
+    private float weight;
+    private int source, target;
 
-    public Edge(Node from, Node to, float weight, int label) {
-        this.Source = from;
-        this.Target = to;
-        this.Weight = weight;
+    public Edge(int from, int to)
+    {
+        this(from, to, 1.f, -1);
+    }
+    
+    public Edge(int from, int to, float weight, int label)
+    {
+        this.source = from;
+        this.target = to;
+        this.weight = weight;
         this.label = label;
     }
 
-    public Node getSourceNode() {
-        return this.Source;
+    public int getSourceNode()
+    {
+        return this.source;
     }
 
-    public Node getTargetNode() {
-        return this.Target;
+    public int getTargetNode()
+    {
+        return this.target;
     }
 
-    public float getWeight() {
-        return this.Weight;
+    public float getWeight()
+    {
+        return this.weight;
     }
 
-    public void setSourceNode(Node s) {
-        this.Source = s;
+    public void setSourceNode(int s)
+    {
+        this.source = s;
     }
 
-    public void setTargetNode(Node t) {
-        this.Target = t;
+    public void setTargetNode(int t)
+    {
+        this.target = t;
     }
 
-    public void setWeight(float w) {
-        this.Weight = w;
+    public void setWeight(float w)
+    {
+        this.weight = w;
     }
 
-    public int getLabel() {
+    public int getLabel()
+    {
         return this.label;
     }
 
-    public void setLabel(int l) {
+    public void setLabel(int l)
+    {
         this.label = l;
     }
 
-    public boolean isVisited() {
-        return this.visited;
-    }
-
-    public void setVisited(boolean b) {
-        this.visited = b;
+    @Override
+    public String toString()
+    {
+        return "e " + source + ' ' + target;
     }
 }
