@@ -6,164 +6,185 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  *
  * @author Christian Hildebrandt (210238835), Matthias Bady (210235131)
  */
-public abstract class Graph {
+public class Graph {
 
-    protected Vector<Node> Nodes;
-    protected Vector<Edge> Edges;
+    public static final int MODE_ADJ = 0x1;
+    public static final int MODE_EDG = 0x2;
+    /***/
+    public int mode;
+    public int[] adjArray;
+    public int[] adjIndices;
+    public Edge[] edgeList;
+    public HashSet<Node> nodes;
 
-    public Graph() {
-        this.Nodes = new Vector<Node>();
-        this.Edges = new Vector<Edge>();
+    public Graph(int numNodes)
+    {
+        nodes = new HashSet<Node>(numNodes);
     }
 
-    //abstrakte Methoden werden für unterschiedliche Graphen unterschiedlich impementiert!!!
-    abstract void addNode(Node v);
+    public void setEdges(Collection<Edge> edges, int _mode)
+    {
+        mode = _mode;
 
-    abstract void addEdge(Edge e);
+        if ((mode & MODE_ADJ) == 1) {
+            adjIndices = new int[nodes.size()];
+            adjArray = new int[edges.size()];
+            HashMap<Integer, List<Integer>> tmpAdj = new HashMap<Integer, List<Integer>>(nodes.size());
 
-    abstract void removeNode(Node v);
+            for (Edge e : edges) {
+                List<Integer> list = tmpAdj.get(e.getSourceNode());
+                if (list == null) {
+                    list = new LinkedList<Integer>();
+                    tmpAdj.put(e.getSourceNode(), list);
+                }
+                list.add(e.getTargetNode());
+            }
 
-    abstract void removeEdge(Edge e);
-
-    public void generateAdjacencyListFromEdges() {
-        for (Edge e : this.Edges) {
-            e.getSourceNode().addAdjecentNodeOut(e.getTargetNode());
-            e.getTargetNode().addAdjecentNodeIn(e.getSourceNode());
-
+            int idx = 0;
+            for (int i = 0; i < nodes.size(); i++) {
+                List<Integer> list = tmpAdj.get(new Integer(i));
+                if (list == null) {
+                    adjIndices[i] = -1;
+                } else {
+                    adjIndices[i] = idx;
+                    for (Integer n2 : list) {
+                        adjArray[idx++] = n2.intValue();
+                    }
+                }
+            }
+        }
+        if ((mode & MODE_EDG) == 1) {
+            edgeList = new Edge[edges.size()];
+            edges.toArray(edgeList);
         }
     }
 
-    public void writeToFile(File f) {
+    public void writeToFile(File f)
+    {
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(f, true));
-            bw.write("n " + this.Nodes.size() + " m " + this.Edges.size());
+            BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+            bw.write("n " + nodes.size() + " m ");
+
+            if ((mode & MODE_EDG) == 1) {
+                bw.write(new Integer(edgeList.length).toString());
+            } else if ((mode & MODE_ADJ) == 1) {
+                bw.append(new Integer(adjArray.length).toString());
+            }
             bw.newLine();
-            for (Edge e : this.Edges) {
-                bw.write("e " + e.getSourceNode().getLabel() + " " + e.getTargetNode().getLabel());
+            for (Node n : nodes) {
+                bw.write(n.toString());
                 bw.newLine();
+            }
+            if ((mode & MODE_EDG) == 1) {
+                for (Edge e : edgeList) {
+                    bw.write(e.toString());
+                    bw.newLine();
+                }
+            } else if ((mode & MODE_ADJ) == 1) {
+                for (int i = 0; i < adjIndices.length; i++) {
+                    int idx = adjIndices[i];
+                    if (idx == -1) {
+                        continue;
+                    }
+                    int next = -1;
+                    if(i<adjIndices.length-1) {
+                        next = adjIndices[i + 1];
+                    } else {
+                        next = adjArray.length;
+                    }
+
+                    for (int j = idx; j < next; j++) {
+                        bw.write("e " + i + " " + adjArray[j]);
+                        bw.newLine();
+                    }
+                }
             }
             bw.close();
         } catch (IOException ioe) {
             System.err.println("Could not write ro File: " + f.getName());
             System.out.println(ioe.getLocalizedMessage());
         }
-
     }
 
-    /* wird möglicherweise benötigt??!!??
-    abstract int getGraphType();
-     */
-    public Vector<Node> getNodes() {
-        return this.Nodes;
-    }
+    public static Graph readFromFile(File graphFile, int mode)
+    {
+        Graph graph = null;
+        
+        Pattern flPattern = Pattern.compile("n ([0-9]+) m ([0-9]+)", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile("([ve]) ([0-9]+) ([0-9]+) ??([0-9]+)?", Pattern.CASE_INSENSITIVE);
 
-    public Vector<Edge> getEdges() {
-        return this.Edges;
-    }
-
-    public void setNodes(Vector<Node> v) {
-        this.Nodes = v;
-    }
-
-    public void setEdges(Vector<Edge> e) {
-        this.Edges = e;
-    }
-
-    public void readFromFile(File graphFile) {
-
+        int lineCount = 1;
+        
         try {
 
-            BufferedReader br = new BufferedReader(new FileReader(graphFile));
+            int numNodes = -1;
+            Matcher m = null;
             String line = null;
-            StringTokenizer st = null;
+            BufferedReader br = new BufferedReader(new FileReader(graphFile));
 
-            //reading first line
+            //read first line
             line = br.readLine();
-            st = new StringTokenizer(line);
+            m = flPattern.matcher(line);
+            numNodes = Integer.parseInt(m.group(1));
+            
+            graph = new Graph(numNodes);
+            Collection<Edge> edges = new LinkedList<Edge>();
 
-            //throwing away char n
-            st.nextToken();
-
-            //getting amount of vertices
-            Nodes.ensureCapacity(Integer.parseInt(st.nextToken()));
-
-            //throwing away char m
-            st.nextToken();
-
-            //getting amount of edges
-            Edges.ensureCapacity(Integer.parseInt(st.nextToken()));
-
-            int edgecounter = 0;
-            //reading rest (assuming nodes are seperated by space delimter)
             while ((line = br.readLine()) != null) {
-                st = new StringTokenizer(line);
-                //throwing away char e
-                    st.nextToken();
+                lineCount++;
+                m = pattern.matcher(line);
+                if (m.group(1).equalsIgnoreCase("v")) {
+                    //Node
 
-                
+                    int label = Integer.parseInt(m.group(2));
 
-                //getting node A
-                Node A = new Node(Integer.parseInt(st.nextToken()));
-                // prevent inserting different node objects with same label
-                if (!this.Nodes.isEmpty()) {
-                    for (Node n : this.Nodes) {
-                        if (n.equals(A)) {
-                            A = n;
-                            break;
-                        } else if (n.equals(this.Nodes.lastElement())) {
-                            this.Nodes.add(A);
-                            break;
-                        }
+                    int x = -1, y = -1;
+                    try {
+                        x = Integer.parseInt(m.group(3));
+                    } catch (Exception e) {
+                        x = -1;
                     }
-                } else {
-                    this.Nodes.add(A);
-                }
-
-                //getting node B
-                Node B = new Node(Integer.parseInt(st.nextToken()));
-                // prevent inserting different node objects with same label
-                if (!this.Nodes.isEmpty()) {
-                    for (Node n : this.Nodes) {
-                        if (n.equals(B)) {
-                            B = n;
-                            break;
-                        } else if (n.equals(this.Nodes.lastElement())) {
-                            this.Nodes.add(B);
-                            break;
-                        }
+                    try {
+                        y = Integer.parseInt(m.group(4));
+                    } catch (Exception e) {
+                        y = -1;
                     }
+                    graph.nodes.add(new Node(label, x, y));
                 } else {
-                    this.Nodes.add(B);
+                    //Edge
+                    Integer n1 = Integer.parseInt(m.group(3));
+                    Integer n2 = Integer.parseInt(m.group(4));
+
+                    edges.add(new Edge(n1, n2));
                 }
-
-
-                //generating edges
-                Edge E;
-                this.Edges.add((E = new Edge(A, B, 0, edgecounter)));
-                edgecounter += 1;
             }
             br.close();
+            graph.setEdges(edges, mode);
+            
         } catch (IOException ioe) {
             System.err.println("ERROR: Cannot read File (" + ioe.getLocalizedMessage() + ")");
             System.exit(1);
+        } catch (Exception e) {
+            System.err.println("Fehler beim Laden der Datei: " + graphFile.getName() + " in Zeile: " + lineCount);
         }
-        //now generate adj.-lists for each node from readed edges
-        generateAdjacencyListFromEdges();
-
+        
+        return graph;
     }
 
-    public void printGraph() {
+    public void printGraph()
+    {
         //TODO print Graph as PNG or somewhat
     }
 }
