@@ -17,6 +17,7 @@ public class Dijkstra {
     };
 
     public enum Implementation {
+
         NONE,
         DEFAULT,
         DIAL,
@@ -93,11 +94,12 @@ public class Dijkstra {
     protected void dijkstra()
     {
 
-        graph.nodes.get(start).setCost(0.f);
-        frontQueue.add(graph.nodes.get(start));
+        Node startNode = graph.nodes.get(start), targetNode = graph.nodes.get(target);
+        startNode.setCost(0.f);
+        frontQueue.add(startNode);
         if (mode == ComputeMode.BIDIRECTIONAL) {
-            graph.nodes.get(target).setCost(0.f);
-            backQueue.add(graph.nodes.get(target));
+            targetNode.setCost(0.f);
+            backQueue.add(targetNode);
         }
 
         float my = Float.MAX_VALUE;
@@ -135,7 +137,7 @@ public class Dijkstra {
             }
 
             if (mode == ComputeMode.UNIDIRECTIONAL) {
-                if (target.equals(n.getLabel())) {
+                if (targetNode == n) {
                     break;
                 }
             }
@@ -157,6 +159,12 @@ public class Dijkstra {
 
                 float tmp = 0.f;
                 if (backVisited != null) {
+//                    if(direction == FWD) {
+//                        tmp = computePathCost(n.getLabel(), frontPredecessor) + computePathCost(other.getLabel(), backPredecessor);
+//                    } else if(direction == BWD) {
+//                        tmp = computePathCost(n.getLabel(), backPredecessor) + computePathCost(other.getLabel(), frontPredecessor);
+//                    }
+//                    tmp += nodeCost(n, other);
                     tmp = n.getCost() + nodeCost(n, other) + other.getCost();
                     if (tmp < my) {
                         if (direction == FWD && backVisited[other.getLabel()]) {
@@ -172,15 +180,16 @@ public class Dijkstra {
                 }
                 if (implementation == Implementation.GOAL_DIRECTED) {
                     if (direction == FWD) {
-                        tmp = nodeCost(other, graph.nodes.get(target));
+                        tmp = n.getCost() + (nodeCost(n, other) + nodeCost(n, targetNode) - nodeCost(other, targetNode));
                     } else if (direction == BWD) {
-                        tmp = nodeCost(other, graph.nodes.get(start));
+                        tmp = n.getCost() + (nodeCost(n, other) + nodeCost(n, startNode) - nodeCost(other, startNode));
                     }
                 } else {
                     tmp = n.getCost() + nodeCost(n, other);
                 }
-                if (tmp < other.getCost()) {
-                    if (Float.isInfinite(other.getCost())) {
+                float oldCost = other.getCost();
+                if (tmp < oldCost) {
+                    if (Float.isInfinite(oldCost)) {
                         other.setCost(tmp);
                         queue.add(other);
                     } else {
@@ -196,7 +205,6 @@ public class Dijkstra {
             }
         }
         createPath(target);
-        System.out.println("Path cost: " + graph.nodes.get(target).getCost());
     }
 
     MyPriorityQueue<Node> getNewQueue()
@@ -240,6 +248,7 @@ public class Dijkstra {
             i = frontPredecessor.get(i);
             path.addFirst(i);
         }
+        path.add(-1);
         i = backward;
         path.add(backward);
         while (i != target) {
@@ -257,6 +266,20 @@ public class Dijkstra {
             i = frontPredecessor.get(i);
             path.addFirst(i);
         }
+    }
+
+    protected float computePathCost(Integer node, HashMap<Integer, Integer> predecessor)
+    {
+        float cost = 0.f;
+
+        int i = node;
+        while (predecessor.containsKey(i)) {
+            int pre = predecessor.get(i);
+            cost += nodeCost(graph.nodes.get(pre), graph.nodes.get(i));
+            i = pre;
+        }
+
+        return cost;
     }
 
     abstract class MyPriorityQueue<T> extends PriorityQueue<T> {
