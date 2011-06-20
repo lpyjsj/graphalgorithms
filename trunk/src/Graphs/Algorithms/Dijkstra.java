@@ -1,49 +1,53 @@
 package Graphs.Algorithms;
 
 import Graphs.Graph;
-import Graphs.MyPriorityQueue;
 import Graphs.Node;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 
-public abstract class AbstractDijkstra {
+public class Dijkstra {
 
     public enum ComputeMode {
 
         UNIDIRECTIONAL,
         BIDIRECTIONAL
     };
+
+    public enum Implementation {
+        NONE,
+        DEFAULT,
+        DIAL,
+        GOAL_DIRECTED
+    };
     public LinkedList<Integer> path = new LinkedList<Integer>();
     /***/
     protected Graph graph;
     protected Integer start, target;
     protected ComputeMode mode;
+    protected Implementation implementation;
     /***/
     private HashMap<Integer, Integer> frontPredecessor, backPredecessor;
     private boolean[] frontVisited, backVisited;
     private MyPriorityQueue<Node> frontQueue, backQueue;
+    /***/
+    private final static int FWD = 0;
+    private final static int BWD = 1;
 
-    protected AbstractDijkstra()
+    protected Dijkstra()
     {
     }
 
-    public AbstractDijkstra(Graph g, Integer s, Integer t)
-    {
-        this(g, s, t, ComputeMode.UNIDIRECTIONAL);
-    }
-
-    public AbstractDijkstra(Graph g, Integer s, Integer t, ComputeMode m)
+    public Dijkstra(Graph g, Integer s, Integer t, Implementation i, ComputeMode m)
     {
         graph = g;
         start = s;
         target = t;
+        implementation = i;
         mode = m;
     }
-
-    abstract MyPriorityQueue<Node> getNewQueue();
-
-    abstract float nodeCost(Node n1, Node n2);
 
     protected void init()
     {
@@ -99,7 +103,7 @@ public abstract class AbstractDijkstra {
         float my = Float.MAX_VALUE;
         LinkedList<Integer> shortestPath = new LinkedList<Integer>();
 
-        int directionIdx = -1;
+        int direction = -1;
         int[] adjArray, adjIndices;
         MyPriorityQueue<Node> queue = null;
 
@@ -107,24 +111,24 @@ public abstract class AbstractDijkstra {
 
             if (frontQueue.isEmpty() || (backQueue != null && !backQueue.isEmpty() && (backQueue.peek().getCost() < frontQueue.peek().getCost()))) {
                 queue = backQueue;
-                directionIdx = 1;
+                direction = BWD;
                 adjArray = graph.inAdjArray;
                 adjIndices = graph.inAdjIndices;
             } else {
                 queue = frontQueue;
-                directionIdx = 0;
+                direction = FWD;
                 adjArray = graph.outAdjArray;
                 adjIndices = graph.outAdjIndices;
             }
 
             Node n = queue.poll();
-            if (directionIdx == 0) {
+            if (direction == FWD) {
                 frontVisited[n.getLabel()] = true;
-            } else if (directionIdx == 1) {
+            } else if (direction == BWD) {
                 backVisited[n.getLabel()] = true;
             }
 
-            if(backVisited != null && frontVisited[n.getLabel()] && backVisited[n.getLabel()]) {
+            if (backVisited != null && frontVisited[n.getLabel()] && backVisited[n.getLabel()]) {
                 path = shortestPath;
                 System.out.println("Path cost: " + my);
                 return;
@@ -151,30 +155,41 @@ public abstract class AbstractDijkstra {
 
                 Node other = graph.nodes.get(adjArray[j]);
 
+                float tmp = 0.f;
                 if (backVisited != null) {
-                    if (n.getCost() + other.getCost() + nodeCost(n, other) < my) {
-                        if (directionIdx == 0 && backVisited[other.getLabel()]) {
-                            my = n.getCost() + other.getCost() + nodeCost(n, other);
+                    tmp = n.getCost() + nodeCost(n, other) + other.getCost();
+                    if (tmp < my) {
+                        if (direction == FWD && backVisited[other.getLabel()]) {
+                            my = tmp;
                             shortestPath = concatPath(n.getLabel(), other.getLabel());
                             continue;
-                        } else if (directionIdx == 1 && frontVisited[other.getLabel()]) {
-                            my = n.getCost() + other.getCost() + nodeCost(n, other);
+                        } else if (direction == BWD && frontVisited[other.getLabel()]) {
+                            my = tmp;
                             shortestPath = concatPath(other.getLabel(), n.getLabel());
                             continue;
                         }
                     }
                 }
-                float tmp = n.getCost() + nodeCost(n, other);
+                if (implementation == Implementation.GOAL_DIRECTED) {
+                    if (direction == FWD) {
+                        tmp = nodeCost(other, graph.nodes.get(target));
+                    } else if (direction == BWD) {
+                        tmp = nodeCost(other, graph.nodes.get(start));
+                    }
+                } else {
+                    tmp = n.getCost() + nodeCost(n, other);
+                }
                 if (tmp < other.getCost()) {
-                    other.setCost(tmp);
                     if (Float.isInfinite(other.getCost())) {
+                        other.setCost(tmp);
                         queue.add(other);
                     } else {
+                        other.setCost(tmp);
                         queue.decreaseKey(other);
                     }
-                    if (directionIdx == 0) {
+                    if (direction == FWD) {
                         frontPredecessor.put(other.getLabel(), n.getLabel());
-                    } else if (directionIdx == 1) {
+                    } else if (direction == BWD) {
                         backPredecessor.put(other.getLabel(), n.getLabel());
                     }
                 }
@@ -182,6 +197,37 @@ public abstract class AbstractDijkstra {
         }
         createPath(target);
         System.out.println("Path cost: " + graph.nodes.get(target).getCost());
+    }
+
+    MyPriorityQueue<Node> getNewQueue()
+    {
+        if (implementation == Implementation.DIAL) {
+        } else {
+            return new MyPriorityQueue<Node>(graph.nodes.size(), new Comparator() {
+
+                @Override
+                public int compare(Object o1, Object o2)
+                {
+                    Node n1 = (Node) o1;
+                    Node n2 = (Node) o2;
+                    return Float.compare(n1.getCost(), n2.getCost());
+                }
+            }) {
+
+                @Override
+                public void decreaseKey(Node elm)
+                {
+                    remove(elm);
+                    add(elm);
+                }
+            };
+        }
+        return null;
+    }
+
+    float nodeCost(Node n1, Node n2)
+    {
+        return Math.abs(n2.getX() - n1.getX()) + Math.abs(n2.getY() - n1.getY());
     }
 
     protected LinkedList<Integer> concatPath(Integer forward, Integer backward)
@@ -211,5 +257,15 @@ public abstract class AbstractDijkstra {
             i = frontPredecessor.get(i);
             path.addFirst(i);
         }
+    }
+
+    abstract class MyPriorityQueue<T> extends PriorityQueue<T> {
+
+        public MyPriorityQueue(int initialCapacity, Comparator<? super T> comparator)
+        {
+            super(initialCapacity, comparator);
+        }
+
+        public abstract void decreaseKey(T elm);
     }
 }

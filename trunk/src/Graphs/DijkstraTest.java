@@ -4,8 +4,7 @@
  */
 package Graphs;
 
-import Graphs.Algorithms.AbstractDijkstra;
-import Graphs.Algorithms.DefaultDijkstra;
+import Graphs.Algorithms.Dijkstra;
 import java.io.File;
 
 /**
@@ -60,15 +59,14 @@ public class DijkstraTest {
         }
 
         Graph graph = null;
-        AbstractDijkstra d = null;
-        AbstractDijkstra.ComputeMode cMode;
+        Dijkstra.ComputeMode cMode;
 
         long t1 = System.currentTimeMillis();
         if ((mode & MODE_B) == MODE_B) {
-            cMode = AbstractDijkstra.ComputeMode.BIDIRECTIONAL;
+            cMode = Dijkstra.ComputeMode.BIDIRECTIONAL;
             graph = Graph.readFromFile(new File(filename), Graph.MODE_ADJ_IN | Graph.MODE_ADJ_OUT);
         } else {
-            cMode = AbstractDijkstra.ComputeMode.UNIDIRECTIONAL;
+            cMode = Dijkstra.ComputeMode.UNIDIRECTIONAL;
             graph = Graph.readFromFile(new File(filename), Graph.MODE_ADJ_OUT);
         }
         System.out.println("Graph loaded in: " + (System.currentTimeMillis() - t1) / 1000.0 + "s");
@@ -77,17 +75,20 @@ public class DijkstraTest {
         t1 = System.currentTimeMillis();
         System.out.println(cMode.toString());
 
+        Dijkstra.Implementation impl = Dijkstra.Implementation.NONE;
         if ((mode & MODE_H) == MODE_H) {
-            d = new DefaultDijkstra(graph, s, t, cMode);
-            System.out.println("Default");
+            impl = Dijkstra.Implementation.DEFAULT;
         } else if ((mode & MODE_D) == MODE_D) {
-//            d = new DialsDijkstra(graph, s, t, cMode);
-            System.out.println("Dial");
+            impl = Dijkstra.Implementation.DIAL;
+        } else if ((mode & MODE_Z) == MODE_Z) {
+            impl = Dijkstra.Implementation.GOAL_DIRECTED;
         }
-        if (d == null) {
-            System.err.println("Eine der Operationen -h oder -d benötigt!");
+        if (impl == Dijkstra.Implementation.NONE) {
+            System.err.println("Eine der Operationen -h, -d oder -z benötigt!");
             System.exit(-1);
         }
+
+        Dijkstra d = new Dijkstra(graph, s, t, impl, cMode);
         d.compute();
 
         System.out.println("Path computed in: " + (System.currentTimeMillis() - t1) / 1000.0 + "s");
