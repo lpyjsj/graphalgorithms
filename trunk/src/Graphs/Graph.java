@@ -3,12 +3,13 @@ package Graphs;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,12 +21,13 @@ import java.util.regex.Pattern;
  */
 public class Graph {
 
-    public static final int MODE_ADJ = 0x1;
-    public static final int MODE_EDG = 0x2;
+    public static final int MODE_ADJ_OUT = 0x1;
+    public static final int MODE_ADJ_IN = 0x2;
+    public static final int MODE_EDG = 0x4;
     /***/
     public int mode;
-    public int[] adjArray;
-    public int[] adjIndices;
+    public int[] inAdjArray, outAdjArray;
+    public int[] inAdjIndices, outAdjIndices;
     public Edge[] edgeList;
     public HashMap<Integer, Node> nodes;
 
@@ -38,34 +40,63 @@ public class Graph {
     {
         mode = _mode;
 
-        if ((mode & MODE_ADJ) == 1) {
-            adjIndices = new int[nodes.size()];
-            adjArray = new int[edges.size()];
-            HashMap<Integer, List<Integer>> tmpAdj = new HashMap<Integer, List<Integer>>(nodes.size());
+        if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
+            outAdjIndices = new int[nodes.size()];
+            outAdjArray = new int[edges.size()];
 
+            HashMap<Integer, List<Integer>> tmpAdjOut = new HashMap<Integer, List<Integer>>(nodes.size());
             for (Edge e : edges) {
-                List<Integer> list = tmpAdj.get(e.getSourceNode());
+                List<Integer> list = tmpAdjOut.get(e.getSourceNode());
                 if (list == null) {
                     list = new LinkedList<Integer>();
-                    tmpAdj.put(e.getSourceNode(), list);
+                    tmpAdjOut.put(e.getSourceNode(), list);
                 }
                 list.add(e.getTargetNode());
             }
 
             int idx = 0;
             for (int i = 0; i < nodes.size(); i++) {
-                List<Integer> list = tmpAdj.get(new Integer(i));
+                List<Integer> list = tmpAdjOut.get(new Integer(i));
                 if (list == null) {
-                    adjIndices[i] = -1;
+                    outAdjIndices[i] = -1;
                 } else {
-                    adjIndices[i] = idx;
+                    outAdjIndices[i] = idx;
                     for (Integer n2 : list) {
-                        adjArray[idx++] = n2.intValue();
+                        outAdjArray[idx++] = n2;
                     }
                 }
             }
         }
-        if ((mode & MODE_EDG) == 1) {
+        if ((mode & MODE_ADJ_IN) == MODE_ADJ_IN) {
+            inAdjIndices = new int[nodes.size()];
+            inAdjArray = new int[edges.size()];
+
+            HashMap<Integer, List<Integer>> tmpAdjIn = new HashMap<Integer, List<Integer>>(nodes.size());
+            for (Edge e : edges) {
+                List<Integer> list = tmpAdjIn.get(e.getTargetNode());
+                if (list == null) {
+                    list = new LinkedList<Integer>();
+                    tmpAdjIn.put(e.getTargetNode(), list);
+                }
+                list.add(e.getSourceNode());
+            }
+
+            int idx = 0;
+            for (int i = 0; i < nodes.size(); i++) {
+                List<Integer> list = tmpAdjIn.get(new Integer(i));
+                if (list == null) {
+                    inAdjIndices[i] = -1;
+                } else {
+                    inAdjIndices[i] = idx;
+                    for (Integer n2 : list) {
+                        inAdjArray[idx++] = n2;
+                    }
+                }
+            }
+        }
+
+        if ((mode
+                & MODE_EDG) == MODE_EDG) {
             edgeList = new Edge[edges.size()];
             edges.toArray(edgeList);
         }
@@ -77,36 +108,39 @@ public class Graph {
             BufferedWriter bw = new BufferedWriter(new FileWriter(f));
             bw.write("n " + nodes.size() + " m ");
 
-            if ((mode & MODE_EDG) == 1) {
+            if ((mode & MODE_EDG) == MODE_EDG) {
                 bw.write(new Integer(edgeList.length).toString());
-            } else if ((mode & MODE_ADJ) == 1) {
-                bw.append(new Integer(adjArray.length).toString());
+            } else if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
+                bw.append(new Integer(inAdjArray.length).toString());
             }
             bw.newLine();
+
             for (Node n : nodes.values()) {
                 bw.write(n.toString());
                 bw.newLine();
             }
-            if ((mode & MODE_EDG) == 1) {
+            if ((mode & MODE_EDG) == MODE_EDG) {
                 for (Edge e : edgeList) {
                     bw.write(e.toString());
                     bw.newLine();
                 }
-            } else if ((mode & MODE_ADJ) == 1) {
-                for (int i = 0; i < adjIndices.length; i++) {
-                    int idx = adjIndices[i];
+            } else if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
+                for (int i = 0; i
+                        < inAdjIndices.length; i++) {
+                    int idx = inAdjIndices[i];
                     if (idx == -1) {
                         continue;
                     }
                     int next = -1;
-                    if(i<adjIndices.length-1) {
-                        next = adjIndices[i + 1];
+                    if (i < inAdjIndices.length - 1) {
+                        next = inAdjIndices[i + 1];
                     } else {
-                        next = adjArray.length;
+                        next = inAdjArray.length;
                     }
 
-                    for (int j = idx; j < next; j++) {
-                        bw.write("e " + i + " " + adjArray[j]);
+                    for (int j = idx; j
+                            < next; j++) {
+                        bw.write("e " + i + " " + inAdjArray[j]);
                         bw.newLine();
                     }
                 }
@@ -118,14 +152,49 @@ public class Graph {
         }
     }
 
+    public void writeToDotFile(File f) throws FileNotFoundException {
+        PrintStream out = new PrintStream(f);
+
+        out.println("digraph g {");
+
+        for(Node n : nodes.values()) {
+            out.println(n.getLabel()+";");
+        }
+
+        if ((mode & MODE_EDG) == MODE_EDG) {
+            for (Edge e : edgeList) {
+                out.println(e.getSourceNode() + " -> " + e.getTargetNode());
+            }
+        } else if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
+            for (int i = 0; i < inAdjIndices.length; i++) {
+                int idx = inAdjIndices[i];
+                if (idx == -1) {
+                    continue;
+                }
+                int next = -1;
+                if (i < inAdjIndices.length - 1) {
+                    next = inAdjIndices[i + 1];
+                } else {
+                    next = inAdjArray.length;
+                }
+
+                for (int j = idx; j < next; j++) {
+                    out.println(i + " -> "  + inAdjArray[j]);
+                }
+            }
+        }
+
+        out.println("}");
+        out.close();
+    }
+
     public static Graph readFromFile(File graphFile, int mode)
     {
         int lineCount = 1;
         Graph graph = null;
-        
+
         Pattern flPattern = Pattern.compile("n ([0-9]+) m ([0-9]+)", Pattern.CASE_INSENSITIVE);
         Pattern pattern = Pattern.compile("([ve]) ([0-9]+) (-??[0-9]+) ?(-??[0-9]+)?", Pattern.CASE_INSENSITIVE);
-        
         try {
 
             int numNodes = -1;
@@ -138,7 +207,7 @@ public class Graph {
             m = flPattern.matcher(line);
             m.find();
             numNodes = Integer.parseInt(m.group(1));
-            
+
             graph = new Graph(numNodes);
             Collection<Edge> edges = new LinkedList<Edge>();
 
@@ -150,7 +219,6 @@ public class Graph {
                     //Node
 
                     int label = Integer.parseInt(m.group(2));
-
                     int x = -1, y = -1;
                     try {
                         x = Integer.parseInt(m.group(3));
@@ -173,7 +241,6 @@ public class Graph {
             }
             br.close();
             graph.setEdges(edges, mode);
-            
         } catch (IOException ioe) {
             System.err.println("ERROR: Cannot read File (" + ioe.getLocalizedMessage() + ")");
             System.exit(1);
@@ -182,7 +249,7 @@ public class Graph {
             e.printStackTrace();
             System.exit(1);
         }
-        
+
         return graph;
     }
 
