@@ -130,13 +130,19 @@ public class Dijkstra {
                 backVisited[n.getLabel()] = true;
             }
 
-            if (backVisited != null && frontVisited[n.getLabel()] && backVisited[n.getLabel()]) {
-                path = shortestPath;
-                System.out.println("Path cost: " + my);
-                return;
-            }
+            if (mode == ComputeMode.BIDIRECTIONAL) {
+                if (implementation == Implementation.GOAL_DIRECTED) {
 
-            if (mode == ComputeMode.UNIDIRECTIONAL) {
+                    if (n.getCost() >= my) {
+                        path = shortestPath;
+                        return;
+                    }
+
+                } else if (frontVisited[n.getLabel()] && backVisited[n.getLabel()]) {
+                    path = shortestPath;
+                    return;
+                }
+            } else {
                 if (targetNode == n) {
                     break;
                 }
@@ -158,14 +164,17 @@ public class Dijkstra {
                 Node other = graph.nodes.get(adjArray[j]);
 
                 float tmp = 0.f;
-                if (backVisited != null) {
-//                    if(direction == FWD) {
-//                        tmp = computePathCost(n.getLabel(), frontPredecessor) + computePathCost(other.getLabel(), backPredecessor);
-//                    } else if(direction == BWD) {
-//                        tmp = computePathCost(n.getLabel(), backPredecessor) + computePathCost(other.getLabel(), frontPredecessor);
-//                    }
-//                    tmp += nodeCost(n, other);
-                    tmp = n.getCost() + nodeCost(n, other) + other.getCost();
+                if (mode == ComputeMode.BIDIRECTIONAL) {
+                    if (implementation == Implementation.GOAL_DIRECTED) {
+                        if (direction == FWD) {
+                            tmp = computePathCost(n.getLabel(), frontPredecessor) + computePathCost(other.getLabel(), backPredecessor);
+                        } else if (direction == BWD) {
+                            tmp = computePathCost(n.getLabel(), backPredecessor) + computePathCost(other.getLabel(), frontPredecessor);
+                        }
+                        tmp += nodeCost(n, other);
+                    } else {
+                        tmp = n.getCost() + nodeCost(n, other) + other.getCost();
+                    }
                     if (tmp < my) {
                         if (direction == FWD && backVisited[other.getLabel()]) {
                             my = tmp;
@@ -248,7 +257,6 @@ public class Dijkstra {
             i = frontPredecessor.get(i);
             path.addFirst(i);
         }
-        path.add(-1);
         i = backward;
         path.add(backward);
         while (i != target) {
@@ -275,7 +283,7 @@ public class Dijkstra {
         int i = node;
         while (predecessor.containsKey(i)) {
             int pre = predecessor.get(i);
-            cost += nodeCost(graph.nodes.get(pre), graph.nodes.get(i));
+            cost += nodeCost(graph.nodes.get(i), graph.nodes.get(pre));
             i = pre;
         }
 
