@@ -202,8 +202,7 @@ public class Dijkstra {
                         other.setCost(tmp);
                         queue.add(other);
                     } else {
-                        other.setCost(tmp);
-                        queue.decreaseKey(other);
+                        queue.decreaseKey(other, tmp);
                     }
                     if (direction == FWD) {
                         frontPredecessor.put(other.getLabel(), n.getLabel());
@@ -216,30 +215,127 @@ public class Dijkstra {
         createPath(target);
     }
 
+    interface MyPriorityQueue<T> {
+
+        public void add(T elm);
+        public T peek();
+        public T poll();
+        public boolean isEmpty();
+        public void decreaseKey(T elm, float cost);
+    }
+
     MyPriorityQueue<Node> getNewQueue()
     {
         if (implementation == Implementation.DIAL) {
-        } else {
-            return new MyPriorityQueue<Node>(graph.nodes.size(), new Comparator() {
+
+            return new MyPriorityQueue<Node>() {
+
+                HashMap<Integer, LinkedList<Node>> pq = new HashMap<Integer, LinkedList<Node>>();
 
                 @Override
-                public int compare(Object o1, Object o2)
+                public void add(Node elm)
                 {
-                    Node n1 = (Node) o1;
-                    Node n2 = (Node) o2;
-                    return Float.compare(n1.getCost(), n2.getCost());
+                    Integer label = (int)elm.getCost();
+                    LinkedList<Node> list = pq.get(label);
+                    if(list == null) {
+                        list = new LinkedList<Node>();
+                        pq.put(label, list);
+                    }
+                    list.add(elm);
                 }
-            }) {
 
                 @Override
-                public void decreaseKey(Node elm)
+                public Node peek()
                 {
-                    remove(elm);
+                    if(isEmpty()) return null;
+                    int sz = graph.nodes.size();
+                    for(int i=0; i<sz; i++) {
+                        LinkedList<Node> list = pq.get(i);
+                        if(list != null && !list.isEmpty()) {
+                            return list.peekFirst();
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public Node poll()
+                {
+                    if(isEmpty()) return null;
+                    int sz = graph.nodes.size();
+                    for(int i=0; i<sz; i++) {
+                        LinkedList<Node> list = pq.get(i);
+                        if(list != null && !list.isEmpty()) {
+                            return list.pollFirst();
+                        }
+                    }
+                    return null;
+                }
+
+                @Override
+                public boolean isEmpty()
+                {
+                    return pq.isEmpty();
+                }
+
+                @Override
+                public void decreaseKey(Node elm, float cost)
+                {
+                    LinkedList<Node> list = pq.get((int)elm.getCost());
+                    try {
+                        list.remove(elm);
+                    } catch(NullPointerException npe) {}
+                    elm.setCost(cost);
                     add(elm);
                 }
             };
+        } else {
+            return new MyPriorityQueue<Node>() {
+
+                PriorityQueue<Node> pq = new PriorityQueue<Node>(graph.nodes.size()/2, new Comparator() {
+
+                    @Override
+                    public int compare(Object o1, Object o2)
+                    {
+                        Node n1 = (Node) o1;
+                        Node n2 = (Node) o2;
+                        return Float.compare(n1.getCost(), n2.getCost());
+                    }
+                });
+
+                @Override
+                public void decreaseKey(Node elm, float cost)
+                {
+                    pq.remove(elm);
+                    elm.setCost(cost);
+                    pq.add(elm);
+                }
+
+                @Override
+                public void add(Node elm)
+                {
+                    pq.add(elm);
+                }
+
+                @Override
+                public Node poll()
+                {
+                    return pq.poll();
+                }
+
+                @Override
+                public boolean isEmpty()
+                {
+                    return pq.isEmpty();
+                }
+
+                @Override
+                public Node peek()
+                {
+                    return pq.peek();
+                }
+            };
         }
-        return null;
     }
 
     float nodeCost(Node n1, Node n2)
@@ -288,15 +384,5 @@ public class Dijkstra {
         }
 
         return cost;
-    }
-
-    abstract class MyPriorityQueue<T> extends PriorityQueue<T> {
-
-        public MyPriorityQueue(int initialCapacity, Comparator<? super T> comparator)
-        {
-            super(initialCapacity, comparator);
-        }
-
-        public abstract void decreaseKey(T elm);
     }
 }
