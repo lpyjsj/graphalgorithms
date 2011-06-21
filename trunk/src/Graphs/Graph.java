@@ -1,11 +1,9 @@
 package Graphs;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
@@ -36,6 +34,17 @@ public class Graph {
         nodes = new HashMap<Integer, Node>(numNodes);
     }
 
+    /** Legt die Kanten im Graph ab.
+     *  Dabei sind verschiedene (miteinander kombinierbare) Speicherarten möglich:
+     *  MODE_ADJ_OUT: Die Kanten werden in Form einer Adjazenzliste ausgehender Kanten gespeichert.
+     *                Die Speicherung erfolgt wie im Artikel "Parallel graph component labelling with GPUs and CUDA" - Abbildung 5d beschrieben.
+     *  MODE_ADJ_IN: Die Kanten werden in Form einer Adjazenzliste eingehender Kanten gespeichert.
+     *               Die Speicherung erfolgt analog zu MODE_ADJ_OUT
+     *  MODE_EDG: die Kanten werden in einem einfachen Array (edgeList) abgelegt
+     *
+     * @param edges
+     * @param _mode
+     */
     public void setEdges(Collection<Edge> edges, int _mode)
     {
         mode = _mode;
@@ -102,56 +111,7 @@ public class Graph {
         }
     }
 
-    public void writeToFile(File f)
-    {
-        try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-            bw.write("n " + nodes.size() + " m ");
-
-            if ((mode & MODE_EDG) == MODE_EDG) {
-                bw.write(new Integer(edgeList.length).toString());
-            } else if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
-                bw.append(new Integer(inAdjArray.length).toString());
-            }
-            bw.newLine();
-
-            for (Node n : nodes.values()) {
-                bw.write(n.toString());
-                bw.newLine();
-            }
-            if ((mode & MODE_EDG) == MODE_EDG) {
-                for (Edge e : edgeList) {
-                    bw.write(e.toString());
-                    bw.newLine();
-                }
-            } else if ((mode & MODE_ADJ_OUT) == MODE_ADJ_OUT) {
-                for (int i = 0; i
-                        < inAdjIndices.length; i++) {
-                    int idx = inAdjIndices[i];
-                    if (idx == -1) {
-                        continue;
-                    }
-                    int next = -1;
-                    if (i < inAdjIndices.length - 1) {
-                        next = inAdjIndices[i + 1];
-                    } else {
-                        next = inAdjArray.length;
-                    }
-
-                    for (int j = idx; j
-                            < next; j++) {
-                        bw.write("e " + i + " " + inAdjArray[j]);
-                        bw.newLine();
-                    }
-                }
-            }
-            bw.close();
-        } catch (IOException ioe) {
-            System.err.println("Could not write ro File: " + f.getName());
-            System.out.println(ioe.getLocalizedMessage());
-        }
-    }
-
+    /** Schreibt den Graph in ein dot-file zur Visualisierung mit Graphviz. */
     public void writeToDotFile(File f) throws FileNotFoundException {
         PrintStream out = new PrintStream(f);
 
@@ -208,8 +168,10 @@ public class Graph {
             m.find();
             numNodes = Integer.parseInt(m.group(1));
 
+            //die kanten werden zunächst in eine einfache liste geladen und
+            //anschließend - dem gewünschten modus entsprechend - im graph abgelegt.
             graph = new Graph(numNodes);
-            Collection<Edge> edges = new LinkedList<Edge>();
+            LinkedList<Edge> edges = new LinkedList<Edge>();
 
             while ((line = br.readLine()) != null) {
                 lineCount++;
@@ -251,10 +213,5 @@ public class Graph {
         }
 
         return graph;
-    }
-
-    public void printGraph()
-    {
-        //TODO print Graph as PNG or somewhat
     }
 }
